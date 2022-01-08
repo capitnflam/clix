@@ -221,6 +221,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { sum } = nativeBinding
+const { Clix, clix } = nativeBinding
 
-module.exports.sum = sum
+module.exports.Clix = Clix
+module.exports.clix = clix

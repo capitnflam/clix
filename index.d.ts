@@ -9,4 +9,8 @@ export class ExternalObject<T> {
     [K: symbol]: T
   }
 }
-export function sum(a: number, b: number): number
+export function clix(cmdStr: string): Clix
+export class Clix {
+  constructor(cmdStr: string)
+  expect(): this
+}
