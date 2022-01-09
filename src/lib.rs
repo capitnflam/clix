@@ -12,10 +12,35 @@ extern crate napi;
 
 use napi::bindgen_prelude::*;
 
+type Line = String;
+type Timeout = Option<u32>;
+
+struct Expect {
+  line: Line,
+  timeout: Timeout,
+}
+
+impl Expect {
+  pub fn new(line: String) -> Self {
+    Self { line, timeout: None }
+  }
+}
+
+struct ExpectError {
+  line: Line,
+  timeout: Timeout,
+  code: Option<u8>,
+}
+
+enum Step {
+  Expect(Expect),
+  ExpectError(ExpectError)
+}
+
 #[napi]
 pub struct Clix {
   command: String,
-  steps: Vec<String>,
+  steps: Vec<Step>,
 }
 
 #[napi]
@@ -27,7 +52,7 @@ impl Clix {
 
   #[napi]
   pub fn expect(&mut self, line: String) -> &Self {
-    self.steps.push(line);
+    self.steps.push(Step::Expect(Expect::new(line)));
     self
   }
 }
@@ -48,26 +73,33 @@ fn clix(cmd_str: String) -> Result<Clix> {
 
 #[test]
 fn given_an_empty_string_it_should_return_an_error() {
-    let res = clix(String::from(""));
-    assert!(res.is_err());
+    let clix_instance = clix(String::from(""));
+    assert!(clix_instance.is_err());
 }
 
 #[test]
 fn given_command_it_should_return_clix_struct() {
   let valid_command = String::from("ls -la");
-  let res = clix(valid_command.clone()).unwrap();
 
-  assert_eq!(res.command, valid_command);
+  let clix_instance = clix(valid_command.clone()).unwrap();
+
+  assert_eq!(clix_instance.command, valid_command);
 }
 
 #[test]
 fn it_should_expose_expect_command() {
   let valid_command = String::from("ls -la");
-  let mut res = clix(valid_command.clone()).unwrap();
+  let mut scenario = clix(valid_command.clone())
+    .unwrap();
 
-  let slf = res.expect(String::from("hey"));
+  let stp = &scenario.expect(String::from("hey")).steps[0];
 
-  assert_eq!(slf.steps[0], "hey");
+  match stp {
+    Step::Expect(step) => assert_eq!(step.line, "hey"),
+    _ => assert!(false),
+  }
+
+  
 }
 
 
