@@ -147,7 +147,6 @@ fn it_should_expose_expect_command() {
 fn it_should_expose_a_run_method() {
   let mut scenario = clix(String::from("echo lol"))
     .unwrap();
-    
   scenario.expect(String::from("lol"));
   
   let res = &scenario.run();
@@ -159,7 +158,6 @@ fn it_should_expose_a_run_method() {
 fn it_should_return_fasly_ok_if_lines_not_match() {
   let mut scenario = clix(String::from("echo lol"))
     .unwrap();
-    
   scenario.expect(String::from("zoo"));
   
   let res = &scenario.run();
