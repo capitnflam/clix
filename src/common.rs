@@ -1,6 +1,7 @@
 pub type Line = String;
 //pub type Timeout = Option<u32>;
 
+#[derive(Debug)]
 pub struct Expect {
   pub line: Line,
   // timeout: Timeout,

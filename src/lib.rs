@@ -14,13 +14,14 @@ extern crate execute;
 mod common;
 use common::{Expect};
 
+#[derive(Debug)]
 enum Step {
   Expect(Expect),
   // ExpectError(ExpectError)
 }
 
 #[napi]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ClixResult {
   ok: bool,
   // output: Vec<String>, // TODO: use ErrOutput and Output type
@@ -34,6 +35,7 @@ impl ClixResult {
 }
 
 #[napi]
+#[derive(Debug)]
 pub struct Clix {
   command: String,
   steps: Vec<Step>,
@@ -104,7 +106,7 @@ fn clix(cmd_str: String) -> Result<Clix> {
     return Err(
       Error::new(
         Status::InvalidArg,
-        "command argument is required".to_owned()
+        String::from("command argument is required")
       )
     );
   }
@@ -112,11 +114,10 @@ fn clix(cmd_str: String) -> Result<Clix> {
   Ok(Clix::new(cmd_str))
 }
 
-// TODO: check error string
 #[test]
 fn given_an_empty_string_it_should_return_an_error() {
-    let clix_instance = clix(String::from(""));
-    assert!(clix_instance.is_err());
+    let clix_instance = clix(String::from("")).unwrap_err();
+    assert_eq!(clix_instance.reason, String::from("command argument is required"));
 }
 
 #[test]
@@ -162,3 +163,16 @@ fn it_should_return_fasly_ok_if_lines_not_match() {
 
   assert_eq!(res.ok, false);
 }
+
+// #[test]
+// fn it_should_expose_an_input_method() {
+//   let mut scenario = clix(String::from("node ./fixture/cli/bin.js")).unwrap();
+//   scenario
+//     .expect(String::from("What is your name?"))
+//     .input(String::from("tony"))
+//     .expect(String::from("Hello tony!"));
+
+//   let res = &scenario.run();
+
+//   assert_eq!(res.ok, true);
+// }
