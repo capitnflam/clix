@@ -1,7 +1,5 @@
 #![deny(clippy::all)]
 
-extern crate execute;
-
 use std::process::Stdio;
 use std::io::{BufReader, BufRead};
 use execute::command;
@@ -9,11 +7,11 @@ use execute::command;
 #[macro_use]
 extern crate napi_derive;
 extern crate napi;
-
 use napi::bindgen_prelude::*;
 
-mod common;
+extern crate execute;
 
+mod common;
 use common::{Expect};
 
 enum Step {
