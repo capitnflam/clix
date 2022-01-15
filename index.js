@@ -221,7 +221,8 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Clix, clix } = nativeBinding
+const { ClixResult, Clix, clix } = nativeBinding
 
+module.exports.ClixResult = ClixResult
 module.exports.Clix = Clix
 module.exports.clix = clix

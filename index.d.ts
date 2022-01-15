@@ -10,7 +10,9 @@ export class ExternalObject<T> {
   }
 }
 export function clix(cmdStr: string): Clix
+export class ClixResult { }
 export class Clix {
   constructor(cmdStr: string)
-  expect(): this
+  expect(line: string): Clix
+  run(): ClixResult
 }
