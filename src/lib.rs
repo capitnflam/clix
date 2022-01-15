@@ -12,25 +12,9 @@ extern crate napi;
 
 use napi::bindgen_prelude::*;
 
-type Line = String;
-// type Timeout = Option<u32>;
+mod common;
 
-struct Expect {
-  line: Line,
-  // timeout: Timeout,
-}
-
-impl Expect {
-  pub fn new(line: String) -> Self {
-    Self { line }
-  }
-}
-
-// struct ExpectError {
-//   line: Line,
-//   timeout: Timeout,
-//   code: Option<u8>,
-// }
+use common::{Expect};
 
 enum Step {
   Expect(Expect),
@@ -62,7 +46,7 @@ pub struct Clix {
 impl Clix {
   #[napi(constructor)]
   pub fn new(cmd_str: String) -> Self {
-    let res = ClixResult::new(false);
+    let res = ClixResult::new(true);
     Clix { command: cmd_str, steps: Vec::new(), result: res }
   }
 
@@ -75,80 +59,42 @@ impl Clix {
   #[napi]
   pub fn run(&mut self) -> ClixResult {
     let mut child = command(&self.command)
-      .stdin(Stdio::piped())
       .stdout(Stdio::piped())
-      .stderr(Stdio::piped())
-      .spawn() // spawn(&mut self) -> Result<Child>
+      .spawn()
       .unwrap();
 
-    // let stdin = child.stdin.take().unwrap();
     let stdout = child.stdout.take().unwrap();
-    let stderr = child.stderr.take().unwrap();
-    
-    let out_reader = BufReader::new(stdout);
-    let mut out_lines = std::collections::LinkedList::new();
-    out_reader
+    let stdout_reader = BufReader::new(stdout);
+
+    let mut stdout_lines = std::collections::LinkedList::new();
+    stdout_reader
       .lines()
       .for_each(|line| {
-        out_lines.push_back(line.ok().unwrap());
-      });
-    let err_reader = BufReader::new(stderr);
-    let mut err_lines = std::collections::LinkedList::new();
-    err_reader
-      .lines()
-      .for_each(|line| {
-        err_lines.push_back(line.ok().unwrap());
+        stdout_lines.push_back(line.ok().unwrap());
       });
 
     let mut steps_it = self.steps.iter();
-
     while let Some(step) = steps_it.next() {
       match step {
         Step::Expect(e) => {
-          match out_lines.pop_front() {
+          match stdout_lines.pop_front() {
             Some(x) => {
               if e.line != x {
-                // TODO: error wrong output, and stop loop
+                self.result.ok = false; 
                 println!("ERROR: {} != {}", e.line, x);
               }
             },
             None => {
-              // TODO: error manque output, and stop loop
-              println!("ERROR: {}", e.line);
+              self.result.ok = false; 
+              println!("ERROR: missing output for line {}", e.line);
+              break;
             }
           }
-        },
-        // Step::ExpectError(e) => {
-        //   match err_lines.pop_front() {
-        //     Some(x) => {
-        //       if e.line != x {
-        //         // TODO: error wrong output, and stop loop
-        //         println!("ERROR: {} != {}", e.line, x);
-        //       }
-        //     },
-        //     None => {
-        //       // TODO: error manque output, and stop loop
-        //       println!("ERROR: {}", e.line);
-        //     }
-        //   }
-        // },
+        }
       }
     }
 
-    let exit_status = child.wait();
-    // child.kill();
-
-
-    if exit_status.is_err() || !exit_status.unwrap().success() {
-      // TODO: error status not 0 or signal
-      println!("ERROR: exit status");
-      self.result.ok = false;
-    } else {
-      self.result.ok = true;
-    }
-
-    // let mut stdin = cmd.stdin.take().expect("toto");
-    // stdin.write_all("Hello, world!".as_bytes());
+    child.wait().unwrap();
 
     self.result
   }
@@ -207,4 +153,16 @@ fn it_should_expose_a_run_method() {
   let res = &scenario.run();
 
   assert!(res.ok);
+}
+
+#[test]
+fn it_should_return_fasly_ok_if_lines_not_match() {
+  let mut scenario = clix(String::from("echo lol"))
+    .unwrap();
+    
+  scenario.expect(String::from("zoo"));
+  
+  let res = &scenario.run();
+
+  assert_eq!(res.ok, false);
 }
