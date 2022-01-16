@@ -13,6 +13,17 @@ impl Expect {
   }
 }
 
+#[derive(Debug)]
+pub struct Input {
+  pub line: Line,
+}
+
+impl Input {
+  pub fn new(line: String) -> Self {
+    Self { line }
+  }
+}
+
 // struct ExpectError {
 //   line: Line,
 //   timeout: Timeout,
